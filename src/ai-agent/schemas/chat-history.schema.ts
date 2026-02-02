@@ -1,0 +1,34 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+export type ChatHistoryDocument = ChatHistory & Document;
+
+@Schema({
+  collection: 'chat_histories',
+  timestamps: true,
+})
+export class ChatHistory {
+  @Prop({ required: true, type: Number })
+  shop_id: number;
+
+  @Prop({ type: String, default: null })
+  title: string | null;
+
+  @Prop({ required: true, type: String, unique: true })
+  session_id: string;
+
+  @Prop({ type: Date, default: null })
+  last_time_message: Date | null;
+
+  @Prop({ type: Date })
+  createdAt?: Date;
+
+  @Prop({ type: Date })
+  updatedAt?: Date;
+}
+
+export const ChatHistorySchema = SchemaFactory.createForClass(ChatHistory);
+
+// Create indexes (session_id already has unique index from schema definition)
+ChatHistorySchema.index({ shop_id: 1 });
+ChatHistorySchema.index({ shop_id: 1, session_id: 1 });

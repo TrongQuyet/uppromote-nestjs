@@ -1,7 +1,5 @@
-
 import { Module } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
-import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import * as fs from 'fs';
