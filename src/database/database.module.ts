@@ -15,7 +15,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         port: configService.get<number>('DB_PORT', 3306),
         username: configService.get<string>('DB_USERNAME', 'root'),
         password: configService.get<string>('DB_PASSWORD', ''),
-        database: configService.get<string>('DB_DATABASE', 'uppromote'),
+        database: configService.get<string>('DB_DATABASE', 'affiliate'),
         autoLoadEntities: true,
         synchronize: false,
       }),
@@ -23,7 +23,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
     // MongoDB
     MongooseModule.forRootAsync({
-      connectionName: 'uppromote',
+      connectionName: 'uppromote-ai-agent',
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {

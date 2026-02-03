@@ -5,7 +5,7 @@ export type ChatHistoryDocument = ChatHistory & Document;
 
 @Schema({
   collection: 'chat_histories',
-  timestamps: true,
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 })
 export class ChatHistory {
   @Prop({ required: true, type: Number })
@@ -20,11 +20,11 @@ export class ChatHistory {
   @Prop({ type: Date, default: null })
   last_time_message: Date | null;
 
-  @Prop({ type: Date })
-  createdAt?: Date;
+  @Prop({ default: () => new Date() })
+  created_at?: Date;
 
-  @Prop({ type: Date })
-  updatedAt?: Date;
+  @Prop({ default: () => new Date() })
+  updated_at?: Date;
 }
 
 export const ChatHistorySchema = SchemaFactory.createForClass(ChatHistory);

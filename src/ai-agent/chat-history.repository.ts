@@ -9,31 +9,9 @@ import {
 @Injectable()
 export class ChatHistoryRepository {
   constructor(
-    @InjectModel(ChatHistory.name, 'uppromote')
+    @InjectModel(ChatHistory.name, 'uppromote-ai-agent')
     private chatHistoryModel: Model<ChatHistoryDocument>,
   ) {}
-
-  /**
-   * Destroy old empty conversations (older than 1 day, without title)
-   */
-  async destroyOldEmptyConversation(
-    shopId: number,
-    currentSessionId: string,
-  ): Promise<void> {
-    try {
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-      await this.chatHistoryModel.deleteMany({
-        shop_id: shopId,
-        title: null,
-        createdAt: { $lt: oneDayAgo },
-        session_id: { $ne: currentSessionId },
-      });
-    } catch (error) {
-      console.error('Error destroying old empty conversations:', error);
-    }
-  }
 
   /**
    * Find chat history by session_id and shop_id

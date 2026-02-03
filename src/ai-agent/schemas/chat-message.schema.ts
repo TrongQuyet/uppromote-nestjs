@@ -5,7 +5,7 @@ export type ChatMessageDocument = ChatMessage & Document;
 
 @Schema({
   collection: 'chat_messages',
-  timestamps: true,
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 })
 export class ChatMessage {
   @Prop({ required: true, type: Number })
@@ -20,11 +20,11 @@ export class ChatMessage {
   @Prop({ required: true, type: String })
   content: string;
 
-  @Prop({ type: Date })
-  createdAt?: Date;
+  @Prop({ default: () => new Date() })
+  created_at?: Date;
 
-  @Prop({ type: Date })
-  updatedAt?: Date;
+  @Prop({ default: () => new Date() })
+  updated_at?: Date;
 }
 
 export const ChatMessageSchema = SchemaFactory.createForClass(ChatMessage);

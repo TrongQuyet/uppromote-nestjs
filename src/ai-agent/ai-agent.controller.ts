@@ -17,6 +17,7 @@ import { ChatMessageService } from './chat-message.service';
 import { AiAgentService } from './ai-agent.service';
 import { ShopifySessionGuard } from '@/auth/shopify-session.guard';
 import { ShopId } from '../common/decorators/shop.decorator';
+import { getClientIp } from '../common/utils/utils';
 
 interface AuthenticatedRequest extends Request {
   shop_id?: number;
@@ -42,23 +43,11 @@ export class AiAgentController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async sendMessage(
     @Body() dto: SendMessageDto,
-    @ShopId() shopId: number | undefined,
+    @ShopId() shopId: number,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ): Promise<void> {
     try {
-      // Shop ID is now from ShopifySessionGuard via @ShopId() decorator
-      if (!shopId) {
-        throw new HttpException(
-          {
-            status: HttpStatus.UNAUTHORIZED,
-            message: 'Shop ID is required',
-            data: [],
-          },
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-
       const { session_id, message, run_id, first_message } = dto;
 
       // Validate session exists
@@ -118,19 +107,16 @@ export class AiAgentController {
       const chatData = {
         session_id,
         chat_input: message,
-        // shop_id: shopId,
-        shop_id: 24382,
+        shop_id: shopId,
         run_id: run_id || null,
       };
 
       // Get client IP
-      const clientIp = this.getClientIp(req);
+      const clientIp: string = getClientIp(req as Request) ?? '';
 
       // Stream response from AI Agent
       await this.aiAgentService.chatAgent(chatData, res, clientIp);
     } catch (error) {
-      console.error('Error in sendMessage:', error);
-
       if (error instanceof HttpException) {
         throw error;
       }
@@ -190,19 +176,5 @@ export class AiAgentController {
    */
   private getMessageDefault(brandName: string): string {
     return `Hello ${brandName}! 👋 I'm your UpPromote assistant. I'm here to help you set up your affiliate program, answer questions, or connect you with our support team. How can I assist you today?`;
-  }
-
-  /**
-   * Get client IP from request
-   */
-  private getClientIp(req: Request): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
-    }
-    if (Array.isArray(forwarded)) {
-      return forwarded[0];
-    }
-    return req.ip || req.socket.remoteAddress || '';
   }
 }

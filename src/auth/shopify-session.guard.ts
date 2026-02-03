@@ -178,7 +178,6 @@ export class ShopifySessionGuard implements CanActivate {
         access_token: Not(IsNull()),
       },
     })) as ShopData | null;
-    console.log(shop);
     if (!shop) {
       throw new UnauthorizedException('Shop not found or not installed');
     }

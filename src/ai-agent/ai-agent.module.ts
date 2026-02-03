@@ -30,7 +30,7 @@ import { AuthModule } from '@/auth/auth.module';
         { name: ChatHistory.name, schema: ChatHistorySchema },
         { name: ChatMessage.name, schema: ChatMessageSchema },
       ],
-      'uppromote', // Use named connection
+      'uppromote-ai-agent',
     ),
   ],
   controllers: [AiAgentController],

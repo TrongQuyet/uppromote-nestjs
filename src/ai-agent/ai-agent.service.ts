@@ -66,6 +66,8 @@ export class AiAgentService {
   ): Promise<void> {
     let fullResponse = '';
     let errorStreaming = false;
+    let clientDisconnected = false;
+
     const createdAtMessage = new Date(Date.now() + 1); // +1ms offset
     const shopId = data.shop_id;
     const sessionId = data.session_id;
@@ -75,6 +77,10 @@ export class AiAgentService {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
+
+    res.on('close', () => {
+      clientDisconnected = true;
+    });
 
     try {
       const headers = {
@@ -115,7 +121,7 @@ export class AiAgentService {
           }
 
           // Forward the line to client
-          if (!res.writableEnded) {
+          if (!clientDisconnected && !res.writableEnded) {
             res.write(line);
           }
         }
@@ -129,7 +135,7 @@ export class AiAgentService {
             fullResponse += decoded.content;
           }
 
-          if (!res.writableEnded) {
+          if (!clientDisconnected && !res.writableEnded) {
             res.write(buffer);
           }
         }
@@ -144,14 +150,14 @@ export class AiAgentService {
           );
         }
 
-        if (!res.writableEnded) {
+        if (!clientDisconnected && !res.writableEnded) {
           res.end();
         }
       });
 
       stream.on('error', (error: Error) => {
         this.logger.error('Stream error:', error);
-        if (!res.writableEnded) {
+        if (!clientDisconnected && !res.writableEnded) {
           res.write(
             JSON.stringify({ error: this.errorMessage, status: 500 }) + '\n',
           );
@@ -179,7 +185,7 @@ export class AiAgentService {
       if (!res.headersSent) {
         res.status(statusCode);
       }
-      if (!res.writableEnded) {
+      if (!clientDisconnected && !res.writableEnded) {
         res.write(JSON.stringify({ error: errorMessage, status: statusCode }));
         res.end();
       }

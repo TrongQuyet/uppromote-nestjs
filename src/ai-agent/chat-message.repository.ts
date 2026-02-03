@@ -9,7 +9,7 @@ import {
 @Injectable()
 export class ChatMessageRepository {
   constructor(
-    @InjectModel(ChatMessage.name, 'uppromote')
+    @InjectModel(ChatMessage.name, 'uppromote-ai-agent')
     private chatMessageModel: Model<ChatMessageDocument>,
   ) {}
 
@@ -28,7 +28,7 @@ export class ChatMessageRepository {
       session_id: data.session_id,
       content: data.content,
       role: data.role,
-      createdAt: data.createdAt || new Date(),
+      created_at: data.createdAt || new Date(),
     });
   }
 }
