@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsBoolean,
 } from 'class-validator';
-import { NoMaliciousContent } from '../decorators/no-malicious-content.decorator';
+import { NoMaliciousContent } from '@/common/decorators/no-malicious-content.decorator';
 
 export class SendMessageDto {
   @IsString()

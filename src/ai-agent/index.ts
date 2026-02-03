@@ -9,16 +9,16 @@ export * from './schemas/chat-message.schema';
 export * from './dto/send-message.dto';
 
 // Services
-export * from './services/ai-agent.service';
-export * from './services/chat-history.service';
-export * from './services/chat-message.service';
+export * from './ai-agent.service';
+export * from './chat-history.service';
+export * from './chat-message.service';
 
 // Repositories
-export * from './repositories/chat-history.repository';
-export * from './repositories/chat-message.repository';
+export * from './chat-history.repository';
+export * from './chat-message.repository';
 
-// Decorators
-export * from './decorators/no-malicious-content.decorator';
+// Decorator
+export * from '@/common/decorators/no-malicious-content.decorator';
 
 // Config
-export { default as aiAgentConfig } from './config/ai-agent.config';
+export { default as aiAgentConfig } from './ai-agent.config';

@@ -1,17 +1,20 @@
 import { Module } from '@nestjs/common';
-import { JwtStrategy } from './jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from './constants';
-import * as fs from 'fs';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtStrategy } from './jwt.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { ShopifySessionGuard } from './shopify-session.guard';
+import { Shop } from '@/entities/shop.entity';
+import { User } from '@/entities/user.entity';
 
 @Module({
-    imports: [
-        JwtModule.register({
-            publicKey: fs.readFileSync('oauth-public.key'),
-            secret: jwtConstants.secret,
-            signOptions: { expiresIn: '60s' },
-        }),
-    ],
-    providers: [JwtStrategy]
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([Shop, User]),
+  ],
+  providers: [JwtStrategy, JwtAuthGuard, ShopifySessionGuard],
+  exports: [JwtAuthGuard, ShopifySessionGuard, TypeOrmModule],
 })
-export class AuthModule { }
+export class AuthModule {}

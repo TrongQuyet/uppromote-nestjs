@@ -8,19 +8,26 @@ import {
   HttpException,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { SendMessageDto } from './dto/send-message.dto';
-import { ChatHistoryService } from './services/chat-history.service';
-import { ChatMessageService } from './services/chat-message.service';
-import { AiAgentService } from './services/ai-agent.service';
+import { ChatHistoryService } from './chat-history.service';
+import { ChatMessageService } from './chat-message.service';
+import { AiAgentService } from './ai-agent.service';
+import { ShopifySessionGuard } from '@/auth/shopify-session.guard';
+import { ShopId } from '@/common/decorators/shop.decorator';
 
 interface AuthenticatedRequest extends Request {
   shop_id?: number;
+  shop?: string;
+  access_token?: string;
+  shop_object?: any;
 }
 
 @Controller('ai-agent/chat')
-export class ChatController {
+@UseGuards(ShopifySessionGuard)
+export class AiAgentController {
   constructor(
     private readonly chatHistoryService: ChatHistoryService,
     private readonly chatMessageService: ChatMessageService,
@@ -29,35 +36,35 @@ export class ChatController {
 
   /**
    * Send message to AI Agent
-   * Route: POST /ai-agent/chat/send-message
+   * Route: POST /api/ai-agent/chat/send-message
    */
   @Post('send-message')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async sendMessage(
     @Body() dto: SendMessageDto,
+    @ShopId() shopId: number,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ): Promise<void> {
     try {
-      // Get shop_id from authenticated request
-      const shopId = 25199;
-
-      // if (!shopId) {
-      //   throw new HttpException(
-      //     {
-      //       status: HttpStatus.UNAUTHORIZED,
-      //       message: 'Shop ID is required',
-      //       data: [],
-      //     },
-      //     HttpStatus.UNAUTHORIZED,
-      //   );
-      // }
+      // Shop ID is now from ShopifySessionGuard via @ShopId() decorator
+      if (!shopId) {
+        throw new HttpException(
+          {
+            status: HttpStatus.UNAUTHORIZED,
+            message: 'Shop ID is required',
+            data: [],
+          },
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
 
       const { session_id, message, run_id, first_message } = dto;
+
       // Validate session exists
       const sessionExists = await this.chatHistoryService.sessionExists(
         session_id,
-        22,
+        shopId,
       );
 
       if (!sessionExists) {

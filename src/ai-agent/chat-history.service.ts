@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ChatHistoryRepository } from '../repositories/chat-history.repository';
-import { ChatHistoryDocument } from '../schemas/chat-history.schema';
+import { ChatHistoryRepository } from './chat-history.repository';
+import { ChatHistoryDocument } from './schemas/chat-history.schema';
 
 @Injectable()
 export class ChatHistoryService {

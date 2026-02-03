@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   ChatMessage,
   ChatMessageDocument,
-} from '../schemas/chat-message.schema';
+} from './schemas/chat-message.schema';
 
 @Injectable()
 export class ChatMessageRepository {

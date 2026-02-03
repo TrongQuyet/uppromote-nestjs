@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ChatMessageRepository } from '../repositories/chat-message.repository';
-import { ChatMessageDocument } from '../schemas/chat-message.schema';
+import { ChatMessageRepository } from './chat-message.repository';
+import { ChatMessageDocument } from './schemas/chat-message.schema';
 
 @Injectable()
 export class ChatMessageService {

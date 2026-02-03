@@ -7,9 +7,7 @@ import {
 } from 'class-validator';
 
 @ValidatorConstraint({ async: false })
-export class NoMaliciousContentConstraint
-  implements ValidatorConstraintInterface
-{
+export class NoMaliciousContentConstraint implements ValidatorConstraintInterface {
   private readonly xssPatterns: RegExp[] = [
     // <script>, javascript:
     /<\s*script/i,

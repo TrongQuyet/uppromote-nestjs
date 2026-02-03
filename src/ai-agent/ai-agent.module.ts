@@ -7,20 +7,24 @@ import { ChatHistory, ChatHistorySchema } from './schemas/chat-history.schema';
 import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
 
 // Repositories
-import { ChatHistoryRepository } from './repositories/chat-history.repository';
-import { ChatMessageRepository } from './repositories/chat-message.repository';
+import { ChatHistoryRepository } from './chat-history.repository';
+import { ChatMessageRepository } from './chat-message.repository';
 
 // Services
-import { ChatHistoryService } from './services/chat-history.service';
-import { ChatMessageService } from './services/chat-message.service';
-import { AiAgentService } from './services/ai-agent.service';
+import { ChatHistoryService } from './chat-history.service';
+import { ChatMessageService } from './chat-message.service';
+import { AiAgentService } from './ai-agent.service';
 
 // Controllers
-import { ChatController } from './chat.controller';
+import { AiAgentController } from './ai-agent.controller';
+
+// Auth module for guards
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule,
+    AuthModule,
     MongooseModule.forFeature(
       [
         { name: ChatHistory.name, schema: ChatHistorySchema },
@@ -29,7 +33,7 @@ import { ChatController } from './chat.controller';
       'uppromote', // Use named connection
     ),
   ],
-  controllers: [ChatController],
+  controllers: [AiAgentController],
   providers: [
     // Repositories
     ChatHistoryRepository,
@@ -40,10 +44,6 @@ import { ChatController } from './chat.controller';
     ChatMessageService,
     AiAgentService,
   ],
-  exports: [
-    ChatHistoryService,
-    ChatMessageService,
-    AiAgentService,
-  ],
+  exports: [ChatHistoryService, ChatMessageService, AiAgentService],
 })
 export class AiAgentModule {}

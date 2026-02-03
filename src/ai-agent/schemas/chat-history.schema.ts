@@ -28,7 +28,3 @@ export class ChatHistory {
 }
 
 export const ChatHistorySchema = SchemaFactory.createForClass(ChatHistory);
-
-// Create indexes (session_id already has unique index from schema definition)
-ChatHistorySchema.index({ shop_id: 1 });
-ChatHistorySchema.index({ shop_id: 1, session_id: 1 });

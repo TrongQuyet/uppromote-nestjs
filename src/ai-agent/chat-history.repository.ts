@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   ChatHistory,
   ChatHistoryDocument,
-} from '../schemas/chat-history.schema';
+} from './schemas/chat-history.schema';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()

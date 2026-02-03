@@ -33,8 +33,8 @@ export class AiAgentService {
     private readonly configService: ConfigService,
     private readonly chatMessageService: ChatMessageService,
   ) {
-    this.baseUrl = this.configService.get<string>('serviceApiUrl', '');
-    this.apiKey = this.configService.get<string>('serviceApiKey', '');
+    this.baseUrl = this.configService.get<string>('aiAgent.serviceApiUrl', '');
+    this.apiKey = this.configService.get<string>('aiAgent.serviceApiKey', '');
 
     this.client = axios.create({
       baseURL: this.baseUrl,
@@ -59,7 +59,7 @@ export class AiAgentService {
   private async streamingRequest(
     method: string,
     url: string,
-    data: Record<string, any>,
+    data: ChatAgentData,
     res: Response,
     clientIp: string,
   ): Promise<void> {
@@ -124,11 +124,7 @@ export class AiAgentService {
         // Process remaining buffer
         if (buffer !== '') {
           const decoded = this.parseJsonLine(buffer);
-          if (
-            decoded &&
-            decoded.type === 'item' &&
-            decoded.content
-          ) {
+          if (decoded && decoded.type === 'item' && decoded.content) {
             fullResponse += decoded.content;
           }
 
@@ -162,21 +158,27 @@ export class AiAgentService {
         }
       });
     } catch (error: any) {
-      this.logger.error('Request error:', error);
+      this.logger.error('Request error:', error.message || error);
 
       const statusCode = error.response?.status || 500;
-      const errorBody =
-        error.response?.data || this.errorMessage;
+
+      // Safely extract error message - avoid circular reference issues
+      let errorMessage = this.errorMessage;
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
 
       if (!res.headersSent) {
         res.status(statusCode);
       }
       if (!res.writableEnded) {
-        res.write(
-          typeof errorBody === 'string'
-            ? errorBody
-            : JSON.stringify(errorBody),
-        );
+        res.write(JSON.stringify({ error: errorMessage, status: statusCode }));
         res.end();
       }
     }
@@ -227,15 +229,19 @@ export class AiAgentService {
     dataMetrics: Record<string, any>,
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await this.client.post('/webhook/shopify-scan', {
-        link: shopDomain,
-        shop_metrics: dataMetrics,
-      }, {
-        headers: {
-          'X-API-Key': this.apiKey,
-          'Content-Type': 'application/json',
+      const response = await this.client.post(
+        '/webhook/shopify-scan',
+        {
+          link: shopDomain,
+          shop_metrics: dataMetrics,
         },
-      });
+        {
+          headers: {
+            'X-API-Key': this.apiKey,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
 
       const data = response.data?.data ?? null;
       return {
@@ -244,8 +250,7 @@ export class AiAgentService {
       };
     } catch (error: any) {
       const statusCode = error.response?.status || 500;
-      const errorBody =
-        error.response?.data?.message || this.errorMessage;
+      const errorBody = error.response?.data?.message || this.errorMessage;
       return {
         status: statusCode,
         message: errorBody,
