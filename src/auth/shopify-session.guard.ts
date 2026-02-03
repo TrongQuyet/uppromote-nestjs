@@ -10,8 +10,9 @@ import { Repository, IsNull, Not } from 'typeorm';
 import { Shop } from '@/entities/shop.entity';
 import { User } from '@/entities/user.entity';
 import * as jwt from 'jsonwebtoken';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { Request } from 'express';
 
 interface ShopifySessionPayload {
   iss: string;
@@ -36,14 +37,34 @@ interface OAuthPayload {
   shop_id?: number;
 }
 
+interface ShopData {
+  id: number;
+  shop: string;
+  access_token: string | null;
+}
+
+interface UserData {
+  id: number;
+  shop_id: number;
+}
+
+interface ShopifyRequest extends Request {
+  shop_id?: number;
+  shop?: string;
+  access_token?: string | null;
+  shop_object?: ShopData;
+}
+
 @Injectable()
 export class ShopifySessionGuard implements CanActivate {
   private readonly logger = new Logger(ShopifySessionGuard.name);
   private oauthPublicKey: string | null = null;
 
   constructor(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     @InjectRepository(Shop)
     private readonly shopRepository: Repository<Shop>,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {
@@ -66,19 +87,25 @@ export class ShopifySessionGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<ShopifyRequest>();
 
     try {
-      const authHeader = request.headers['authorization'] || '';
+      const authHeaderRaw = request.headers['authorization'] as
+        | string
+        | string[]
+        | undefined;
+      const authHeader: string = Array.isArray(authHeaderRaw)
+        ? (authHeaderRaw[0] ?? '')
+        : (authHeaderRaw ?? '');
 
       // Check Bearer token format
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      if (!authHeader.startsWith('Bearer ')) {
         throw new UnauthorizedException(
           'Missing or invalid authorization header',
         );
       }
 
-      const token = authHeader.substring(7);
+      const token: string = authHeader.substring(7);
       if (!token || token === 'undefined') {
         throw new UnauthorizedException('Token is required');
       }
@@ -110,8 +137,10 @@ export class ShopifySessionGuard implements CanActivate {
       const parts = token.split('.');
       if (parts.length !== 3) return false;
 
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-      return payload.iss && payload.iss.includes('.myshopify.com');
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64').toString(),
+      ) as Partial<ShopifySessionPayload>;
+      return payload.iss?.includes('.myshopify.com') ?? false;
     } catch {
       return false;
     }
@@ -121,7 +150,7 @@ export class ShopifySessionGuard implements CanActivate {
    * Handle authentication for Shopify embedded app
    */
   private async handleShopifyEmbeddedAuth(
-    request: any,
+    request: ShopifyRequest,
     token: string,
   ): Promise<boolean> {
     const payload = this.decodeShopifyToken(token);
@@ -143,12 +172,12 @@ export class ShopifySessionGuard implements CanActivate {
     }
 
     // Find shop in database
-    const shop = await this.shopRepository.findOne({
+    const shop = (await this.shopRepository.findOne({
       where: {
         shop: shopDomain,
         access_token: Not(IsNull()),
       },
-    });
+    })) as ShopData | null;
     console.log(shop);
     if (!shop) {
       throw new UnauthorizedException('Shop not found or not installed');
@@ -166,7 +195,10 @@ export class ShopifySessionGuard implements CanActivate {
   /**
    * Handle authentication for non-embedded app (OAuth/Passport token)
    */
-  private async handleOAuthAuth(request: any, token: string): Promise<boolean> {
+  private async handleOAuthAuth(
+    request: ShopifyRequest,
+    token: string,
+  ): Promise<boolean> {
     if (!this.oauthPublicKey) {
       throw new UnauthorizedException('OAuth authentication not configured');
     }
@@ -190,12 +222,12 @@ export class ShopifySessionGuard implements CanActivate {
         shopId = payload.shop_id;
       } else if (payload.sub) {
         // sub is user_id, find shop_id from users table
-        const userId = parseInt(payload.sub, 10);
-        if (!isNaN(userId)) {
-          const user = await this.userRepository.findOne({
+        const userId = Number.parseInt(payload.sub, 10);
+        if (!Number.isNaN(userId)) {
+          const user = (await this.userRepository.findOne({
             where: { id: userId },
             select: ['shop_id'],
-          });
+          })) as UserData | null;
 
           if (user) {
             shopId = user.shop_id;
@@ -208,12 +240,12 @@ export class ShopifySessionGuard implements CanActivate {
       }
 
       // Find shop in database
-      const shop = await this.shopRepository.findOne({
+      const shop = (await this.shopRepository.findOne({
         where: {
           id: shopId,
           access_token: Not(IsNull()),
         },
-      });
+      })) as ShopData | null;
 
       if (!shop) {
         throw new UnauthorizedException('Shop not found or not installed');

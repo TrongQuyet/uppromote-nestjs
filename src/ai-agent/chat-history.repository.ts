@@ -5,7 +5,6 @@ import {
   ChatHistory,
   ChatHistoryDocument,
 } from './schemas/chat-history.schema';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ChatHistoryRepository {
@@ -13,30 +12,6 @@ export class ChatHistoryRepository {
     @InjectModel(ChatHistory.name, 'uppromote')
     private chatHistoryModel: Model<ChatHistoryDocument>,
   ) {}
-
-  /**
-   * Create a new conversation
-   */
-  async createNewConversation(shopId: number): Promise<string | null> {
-    try {
-      const sessionId = `chat-${uuidv4()}`;
-
-      await this.chatHistoryModel.create({
-        shop_id: shopId,
-        session_id: sessionId,
-        title: null,
-        last_time_message: null,
-      });
-
-      // Destroy old empty conversations
-      await this.destroyOldEmptyConversation(shopId, sessionId);
-
-      return sessionId;
-    } catch (error) {
-      console.error('Error creating new conversation:', error);
-      return null;
-    }
-  }
 
   /**
    * Destroy old empty conversations (older than 1 day, without title)
@@ -103,48 +78,5 @@ export class ChatHistoryRepository {
         { new: true },
       )
       .exec();
-  }
-
-  /**
-   * List chat histories for a shop (with pagination)
-   */
-  async listHistory(
-    shopId: number,
-    page: number = 1,
-    perPage: number = 15,
-  ): Promise<{
-    items: ChatHistoryDocument[];
-    total: number;
-    page: number;
-    perPage: number;
-    hasNextPage: boolean;
-  }> {
-    const skip = (page - 1) * perPage;
-
-    const [items, total] = await Promise.all([
-      this.chatHistoryModel
-        .find({
-          shop_id: shopId,
-          title: { $ne: null },
-        })
-        .sort({ last_time_message: -1 })
-        .skip(skip)
-        .limit(perPage)
-        .exec(),
-      this.chatHistoryModel
-        .countDocuments({
-          shop_id: shopId,
-          title: { $ne: null },
-        })
-        .exec(),
-    ]);
-
-    return {
-      items,
-      total,
-      page,
-      perPage,
-      hasNextPage: skip + items.length < total,
-    };
   }
 }

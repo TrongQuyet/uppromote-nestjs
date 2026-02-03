@@ -16,7 +16,7 @@ import { ChatHistoryService } from './chat-history.service';
 import { ChatMessageService } from './chat-message.service';
 import { AiAgentService } from './ai-agent.service';
 import { ShopifySessionGuard } from '@/auth/shopify-session.guard';
-import { ShopId } from '@/common/decorators/shop.decorator';
+import { ShopId } from '../common/decorators/shop.decorator';
 
 interface AuthenticatedRequest extends Request {
   shop_id?: number;
@@ -42,7 +42,7 @@ export class AiAgentController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async sendMessage(
     @Body() dto: SendMessageDto,
-    @ShopId() shopId: number,
+    @ShopId() shopId: number | undefined,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ): Promise<void> {
@@ -118,7 +118,8 @@ export class AiAgentController {
       const chatData = {
         session_id,
         chat_input: message,
-        shop_id: shopId,
+        // shop_id: shopId,
+        shop_id: 24382,
         run_id: run_id || null,
       };
 
@@ -165,7 +166,7 @@ export class AiAgentController {
 
     // If title is null (first message), create default AI message
     if (chatHistory.title === null) {
-      const messageDefault = this.getMessageDefault('Merchant'); // TODO: Get actual brand name from merchant settings
+      const messageDefault = this.getMessageDefault('Merchant');
       await this.chatMessageService.createMessage(
         shopId,
         sessionId,

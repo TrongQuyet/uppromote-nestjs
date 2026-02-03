@@ -7,13 +7,6 @@ export class ChatHistoryService {
   constructor(private readonly chatHistoryRepository: ChatHistoryRepository) {}
 
   /**
-   * Create a new conversation
-   */
-  async createNewConversation(shopId: number): Promise<string | null> {
-    return this.chatHistoryRepository.createNewConversation(shopId);
-  }
-
-  /**
    * Find chat history by session and shop
    */
   async findBySessionAndShop(
@@ -62,12 +55,5 @@ export class ChatHistoryService {
       shopId,
       updateData,
     );
-  }
-
-  /**
-   * List chat histories with pagination
-   */
-  async listHistory(shopId: number, perPage: number = 15) {
-    return this.chatHistoryRepository.listHistory(shopId, 1, perPage);
   }
 }

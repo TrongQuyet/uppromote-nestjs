@@ -2,8 +2,8 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
+  type ValidatorConstraintInterface,
+  type ValidationArguments,
 } from 'class-validator';
 
 @ValidatorConstraint({ async: false })
@@ -42,7 +42,7 @@ export class NoMaliciousContentConstraint implements ValidatorConstraintInterfac
     /%3C.*script/i,
   ];
 
-  validate(value: any, args: ValidationArguments): boolean {
+  validate(value: unknown): boolean {
     if (value === null || value === undefined || value === '') {
       return true;
     }
@@ -64,7 +64,7 @@ export class NoMaliciousContentConstraint implements ValidatorConstraintInterfac
   }
 
   private stripTags(str: string): string {
-    return str.replace(/<[^>]*>/g, '');
+    return str.replaceAll(/<[^>]*>/g, '');
   }
 
   defaultMessage(args: ValidationArguments): string {
@@ -72,11 +72,14 @@ export class NoMaliciousContentConstraint implements ValidatorConstraintInterfac
   }
 }
 
-export function NoMaliciousContent(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
+export function NoMaliciousContent(
+  validationOptions?: ValidationOptions,
+): PropertyDecorator {
+  return function (object: object, propertyName: string | symbol) {
     registerDecorator({
+      name: 'NoMaliciousContent',
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName: propertyName.toString(),
       options: validationOptions,
       constraints: [],
       validator: NoMaliciousContentConstraint,

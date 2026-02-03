@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Response } from 'express';
+import { Readable } from 'node:stream';
 import { ChatMessageService } from './chat-message.service';
 
 interface ChatAgentData {
@@ -83,7 +84,7 @@ export class AiAgentService {
         Accept: 'text/event-stream',
       };
 
-      const response: AxiosResponse = await this.client.request({
+      const response = await this.client.request<Readable>({
         method,
         url,
         data,
@@ -91,7 +92,7 @@ export class AiAgentService {
         responseType: 'stream',
       });
 
-      const stream = response.data;
+      const stream: Readable = response.data;
       let buffer = '';
 
       stream.on('data', (chunk: Buffer) => {
@@ -120,11 +121,11 @@ export class AiAgentService {
         }
       });
 
-      stream.on('end', async () => {
+      stream.on('end', () => {
         // Process remaining buffer
         if (buffer !== '') {
           const decoded = this.parseJsonLine(buffer);
-          if (decoded && decoded.type === 'item' && decoded.content) {
+          if (decoded?.type === 'item' && decoded.content) {
             fullResponse += decoded.content;
           }
 
@@ -135,7 +136,7 @@ export class AiAgentService {
 
         // Save AI message if not error
         if (!errorStreaming && fullResponse !== '') {
-          await this.saveAIMessage(
+          void this.saveAIMessage(
             shopId,
             sessionId,
             fullResponse,
@@ -157,21 +158,22 @@ export class AiAgentService {
           res.end();
         }
       });
-    } catch (error: any) {
-      this.logger.error('Request error:', error.message || error);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      this.logger.error('Request error:', axiosError.message || String(error));
 
-      const statusCode = error.response?.status || 500;
+      const statusCode: number = axiosError.response?.status ?? 500;
 
       // Safely extract error message - avoid circular reference issues
       let errorMessage = this.errorMessage;
-      if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
-          errorMessage = error.response.data;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
+      if (axiosError.response?.data) {
+        if (typeof axiosError.response.data === 'string') {
+          errorMessage = axiosError.response.data;
+        } else if (axiosError.response.data?.message) {
+          errorMessage = axiosError.response.data.message;
         }
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (axiosError.message) {
+        errorMessage = axiosError.message;
       }
 
       if (!res.headersSent) {
@@ -191,7 +193,7 @@ export class AiAgentService {
     try {
       const trimmed = line.trim();
       if (!trimmed) return null;
-      return JSON.parse(trimmed);
+      return JSON.parse(trimmed) as StreamChunk;
     } catch {
       return null;
     }
@@ -218,44 +220,6 @@ export class AiAgentService {
       }
     } catch (error) {
       this.logger.error('Error saving AI message:', error);
-    }
-  }
-
-  /**
-   * Scan Shopify store
-   */
-  async scanShopify(
-    shopDomain: string,
-    dataMetrics: Record<string, any>,
-  ): Promise<{ status: number; data?: any; message?: string }> {
-    try {
-      const response = await this.client.post(
-        '/webhook/shopify-scan',
-        {
-          link: shopDomain,
-          shop_metrics: dataMetrics,
-        },
-        {
-          headers: {
-            'X-API-Key': this.apiKey,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      const data = response.data?.data ?? null;
-      return {
-        status: response.status,
-        data,
-      };
-    } catch (error: any) {
-      const statusCode = error.response?.status || 500;
-      const errorBody = error.response?.data?.message || this.errorMessage;
-      return {
-        status: statusCode,
-        message: errorBody,
-        data: [],
-      };
     }
   }
 }

@@ -5,7 +5,7 @@ export default registerAs('aiAgent', () => ({
   serviceApiUrl:
     process.env.AI_AGENT_SERVICE_API_URL || 'https://n8n.uppromote.dev',
   serviceApiKey:
-    process.env.AI_AGENT_SERVICE_API_KEY || '782d18e0a94874b367be66b2be3e6ef6',
+    process.env.AI_AGENT_SERVICE_API_KEY || '782d1820a94873b367be66b4be3e6ef6',
 
   // MongoDB Configuration
   mongodbUri:

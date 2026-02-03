@@ -24,21 +24,4 @@ export class ChatMessageService {
       createdAt: createdAt || new Date(),
     });
   }
-
-  /**
-   * List messages with cursor-based pagination
-   */
-  async listMessage(
-    shopId: number,
-    sessionId: string,
-    cursor: string | null,
-    perPage: number = 15,
-  ) {
-    return this.chatMessageRepository.listMessages(
-      shopId,
-      sessionId,
-      cursor,
-      perPage,
-    );
-  }
 }

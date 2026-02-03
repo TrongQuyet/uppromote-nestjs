@@ -1,11 +1,17 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+interface ShopRequest {
+  shop_id?: number;
+  shop?: string;
+  shop_object?: unknown;
+}
+
 /**
  * Decorator to get shop_id from request (set by ShopifySessionGuard)
  */
-export const ShopId = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): number => {
-    const request = ctx.switchToHttp().getRequest();
+export const ShopId: () => ParameterDecorator = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext): number | undefined => {
+    const request = ctx.switchToHttp().getRequest<ShopRequest>();
     return request.shop_id;
   },
 );
@@ -13,9 +19,9 @@ export const ShopId = createParamDecorator(
 /**
  * Decorator to get shop domain from request
  */
-export const ShopDomain = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
+export const ShopDomain: () => ParameterDecorator = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext): string | undefined => {
+    const request = ctx.switchToHttp().getRequest<ShopRequest>();
     return request.shop;
   },
 );
@@ -23,9 +29,9 @@ export const ShopDomain = createParamDecorator(
 /**
  * Decorator to get full shop object from request
  */
-export const ShopObject = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+export const ShopObject: () => ParameterDecorator = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext): unknown => {
+    const request = ctx.switchToHttp().getRequest<ShopRequest>();
     return request.shop_object;
   },
 );
